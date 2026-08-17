@@ -4,23 +4,17 @@
 // Firestore security rules, not by hiding this object) — see console.firebase.google.com
 // project settings. Same call Golf's/Durak's firebase.ts makes for their own projects.
 //
-// *** PLACEHOLDER — replace with a real project before online play/the leaderboard work. ***
-// 1. Create a project at console.firebase.google.com (any name, e.g. "mexican-train-xxxxx").
-// 2. Enable Firestore (Standard edition, any region).
-// 3. Project Settings -> General -> Your apps -> add a Web app -> copy its config here.
-// 4. Firestore -> Rules -> paste in this repo's firestore.rules -> Publish.
-// Until then, "Play online" will fail to create/join a room, and the leaderboard button will
-// just show "Loading…" forever — local (vs-bots) play works with zero setup either way.
+// Project: mexican-train-a8472.
 import { initializeApp } from 'firebase/app';
 import { initializeFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: 'REPLACE_ME',
-  authDomain: 'REPLACE_ME.firebaseapp.com',
-  projectId: 'REPLACE_ME',
-  storageBucket: 'REPLACE_ME.firebasestorage.app',
-  messagingSenderId: 'REPLACE_ME',
-  appId: 'REPLACE_ME',
+  apiKey: 'AIzaSyBWttrdinaMKxxf9_p5Rmn9VwZnKojPjBA',
+  authDomain: 'mexican-train-a8472.firebaseapp.com',
+  projectId: 'mexican-train-a8472',
+  storageBucket: 'mexican-train-a8472.firebasestorage.app',
+  messagingSenderId: '446225377235',
+  appId: '1:446225377235:web:4d4461da95b9969a887126',
 };
 
 const app = initializeApp(firebaseConfig);

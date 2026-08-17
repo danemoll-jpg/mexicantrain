@@ -133,7 +133,7 @@ export function GameView({
               {p.id === me?.id && ' (you)'}
             </span>
             <span className="player-chip__count" title="Tiles left in hand">
-              🁣 {p.handCount}
+              {p.handCount}
             </span>
             <span className="player-chip__total" title="Running total after completed rounds">
               {p.total}
@@ -141,7 +141,7 @@ export function GameView({
           </div>
         ))}
         <div className="player-chip player-chip--boneyard" title="Tiles left in the boneyard">
-          🎲 {publicState.boneyardCount}
+          🦴 {publicState.boneyardCount}
         </div>
       </div>
 

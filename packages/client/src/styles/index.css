@@ -442,8 +442,12 @@ button {
 }
 
 .player-chip__count {
-  opacity: 0.85;
+  border: 1.5px solid var(--tile-bg);
+  color: var(--tile-bg);
+  border-radius: 0.4rem;
+  padding: 0.05rem 0.45rem;
   font-weight: 700;
+  opacity: 0.9;
 }
 
 .player-chip__total {
