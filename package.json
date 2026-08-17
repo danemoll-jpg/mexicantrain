@@ -1,0 +1,19 @@
+{
+  "name": "mexican-train",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A web version of Mexican Train — the domino game where you build trains off a shared double-12 hub each round, everyone chases the lowest pip total over 13 rounds. Play locally against Ed & Carol, or online against a friend via a shared room code (Firebase-synced).",
+  "workspaces": [
+    "packages/engine",
+    "packages/client"
+  ],
+  "scripts": {
+    "build:engine": "npm run build -w packages/engine",
+    "test": "npm run test -w packages/engine",
+    "dev": "npm run build:engine && npm run dev -w packages/client",
+    "build": "npm run build:engine && npm run build -w packages/client"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}
