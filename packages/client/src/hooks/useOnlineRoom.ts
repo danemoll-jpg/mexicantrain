@@ -5,6 +5,7 @@ import {
   BotPersonalityId,
   deriveSoundCues,
   DEFAULT_RULES,
+  GameEvent,
   getHint,
   MoveHint,
   PlayerAction,
@@ -144,28 +145,51 @@ export function useOnlineRoom(): UseOnlineRoom {
     for (const cue of deriveSoundCues(newEvents)) playSound(resolveSoundName(cue, publicNow));
   }, [gameState, mySeatIndex, room]);
 
-  // Host's browser drives every bot turn (and every atomic step of it — a bot "turn" here may
-  // be several actions in a row: draw, play, and a whole double-satisfy chain on top).
+  // Host's browser drives every bot turn. A bot "turn" here can be several atomic engine
+  // actions in a row — a draw before a play, or (unique to Mexican Train) a whole
+  // open-double-satisfy chain stacking several draw/play pairs on top of each other. Those
+  // in-between steps aren't something another client needs to see live — only the *result*
+  // once the turn actually hands off to someone else is. So this batches every atomic step
+  // that keeps the same seat acting into ONE Firestore write, flushing only when the acting
+  // seat changes (a real turn boundary) or the match ends. A long double chain that used to
+  // cost one network round trip per step now costs exactly one, however many steps it took —
+  // that round-trip latency stacking up was the actual source of the extra online lag.
   useEffect(() => {
     if (!isHost || !code || !room || !gameState) return;
     if (!isBotTurn(gameState)) return;
     if (botLoopRunning.current) return;
     botLoopRunning.current = true;
 
+    const roomCode = code; // local const alias — TS won't carry the `!code` narrowing above into the nested `flush` function below
     let current = gameState;
     let currentRoom = room;
     const difficulty = room.botDifficulty ?? DEFAULT_DIFFICULTY;
     (async () => {
+      let batchStartSeat = current.actingSeat;
+      let batchEvents: GameEvent[] = [];
+
+      async function flush() {
+        if (batchEvents.length === 0) return;
+        const lines = await commentaryForEvents(commentaryProvider.current, batchEvents, current);
+        const written = await writeGameState(roomCode, currentRoom, current, lines);
+        // Keep our local copy in step with what we just wrote (rather than waiting for the
+        // snapshot round-trip) so the next batch doesn't clobber it.
+        currentRoom = { ...currentRoom, ...written };
+        batchEvents = [];
+      }
+
       while (isBotTurn(current)) {
         await delay(BOT_THINK_MIN_MS + Math.random() * (BOT_THINK_MAX_MS - BOT_THINK_MIN_MS));
         const { state: next, newEvents } = stepBot(current, difficulty);
-        const lines = await commentaryForEvents(commentaryProvider.current, newEvents, next);
-        const written = await writeGameState(code, currentRoom, next, lines);
         current = next;
-        // Keep our local copy in step with what we just wrote (rather than waiting for the
-        // snapshot round-trip) so a second loop iteration doesn't clobber it.
-        currentRoom = { ...currentRoom, ...written };
+        batchEvents.push(...newEvents);
+
+        if (current.actingSeat !== batchStartSeat || current.phase === 'matchOver') {
+          await flush();
+          batchStartSeat = current.actingSeat;
+        }
       }
+      await flush(); // whatever's left in the batch when a human's turn arrives
     })().finally(() => {
       botLoopRunning.current = false;
     });
