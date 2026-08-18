@@ -29,6 +29,7 @@ import {
   removeSeat as removeSeatRequest,
   resetToLobby,
   RoomDoc,
+  sendReadyForNextRound,
   setRoomDifficulty,
   setRoomRules,
   startMatch as startMatchRequest,
@@ -290,6 +291,20 @@ export function useOnlineRoom(): UseOnlineRoom {
   const sendAction = useCallback(
     (action: PlayerAction) => {
       if (!code || !room || !gameState || mySeatIndex < 0) return;
+
+      // 'readyForNextRound' isn't turn-based, and — unlike every other action — more than one
+      // player can legitimately send it during the same round-over pause, so it goes through a
+      // Firestore transaction (see sendReadyForNextRound) instead of the optimistic
+      // compute-locally-then-overwrite path every other action uses below.
+      if (action.type === 'readyForNextRound') {
+        setError(null);
+        setHint(null);
+        sendReadyForNextRound(code, room.seats[mySeatIndex].id, commentaryProvider.current).catch((err) => {
+          setError(err instanceof Error ? err.message : 'That move was rejected.');
+        });
+        return;
+      }
+
       if (gameState.actingSeat !== mySeatIndex) {
         setError("It's not your turn.");
         return;

@@ -6,6 +6,7 @@ import { HintPanel } from './HintPanel';
 import { HowToPlay } from './HowToPlay';
 import { LeaderboardPanel } from './LeaderboardPanel';
 import { MatchOverScreen } from './MatchOverScreen';
+import { RoundSummaryScreen } from './RoundSummaryScreen';
 import { ScoreCard } from './ScoreCard';
 import { SoundToggle } from './SoundToggle';
 import { TrainBoard } from './TrainBoard';
@@ -171,6 +172,13 @@ export function GameView({
       {showLeaderboard && <LeaderboardPanel onClose={() => setShowLeaderboard(false)} />}
       {showHowToPlay && (
         <HowToPlay onClose={() => setShowHowToPlay(false)} allTrainsPublicInThisMatch={publicState.rules.allTrainsPublic} />
+      )}
+      {publicState.phase === 'roundOver' && publicState.roundSummary && (
+        <RoundSummaryScreen
+          key={publicState.roundSummary.roundNumber}
+          state={publicState}
+          onReady={() => sendAction({ type: 'readyForNextRound' })}
+        />
       )}
       {publicState.phase === 'matchOver' && <MatchOverScreen state={publicState} onPlayAgain={newMatch} />}
     </div>

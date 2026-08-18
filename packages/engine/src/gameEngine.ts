@@ -13,6 +13,7 @@ import {
   PlayerAction,
   PlayerState,
   ROUNDS_PER_MATCH,
+  RoundSummary,
   Tile,
   tileId,
   Train,
@@ -123,6 +124,8 @@ export function createMatch(config: EngineConfig): GameState {
     startingSeat: 0,
     log: [],
     matchWinnerIds: null,
+    roundSummary: null,
+    readyPlayerIds: [],
   };
 
   state.log.push({ type: 'matchStarted', playerOrder: players.map((p) => p.id) });
@@ -131,20 +134,51 @@ export function createMatch(config: EngineConfig): GameState {
 }
 
 export function getCurrentLegalActions(state: GameState): LegalActions | null {
-  if (state.phase === 'matchOver') return null;
+  if (state.phase === 'matchOver' || state.phase === 'roundOver') return null;
   return { seatIndex: state.actingSeat, actions: getLegalActions(state, state.actingSeat) };
 }
 
+/** Scores the just-finished round and parks the match in 'roundOver' with a snapshot for the
+ * summary screen — nothing is dealt and the match is never marked over from here directly.
+ * Bot seats are auto-readied immediately (they never make anyone wait); if that alone clears
+ * every human (an all-bot table, or no humans left), the round-over pause collapses instantly
+ * via `maybeAdvanceFromRoundOver` and this behaves just like the old immediate-advance code. */
 function resolveRound(state: GameState, rng: () => number, wentOutBy: string | null): void {
   const scores: Array<{ playerId: string; score: number; total: number }> = [];
+  const summaryPlayers: RoundSummary['players'] = [];
   for (const p of state.players) {
     const score = scoreHand(p.hand);
     p.roundScores.push(score);
-    scores.push({ playerId: p.id, score, total: p.roundScores.reduce((a, b) => a + b, 0) });
+    const total = p.roundScores.reduce((a, b) => a + b, 0);
+    scores.push({ playerId: p.id, score, total });
+    summaryPlayers.push({ playerId: p.id, hand: [...p.hand], roundScore: score, total });
   }
   state.log.push({ type: 'roundScored', roundNumber: state.roundNumber, wentOutBy, scores });
 
-  if (state.roundNumber >= ROUNDS_PER_MATCH) {
+  state.phase = 'roundOver';
+  state.roundSummary = {
+    roundNumber: state.roundNumber,
+    wentOutBy,
+    isFinalRound: state.roundNumber >= ROUNDS_PER_MATCH,
+    players: summaryPlayers,
+  };
+  state.readyPlayerIds = state.players.filter((p) => p.isBot).map((p) => p.id);
+  maybeAdvanceFromRoundOver(state, rng);
+}
+
+/** Once every human player has readied up (or there were none to begin with), either deals
+ * the next round or, if this was the last one, ends the match. A no-op while any human is
+ * still on the round-over summary screen. */
+function maybeAdvanceFromRoundOver(state: GameState, rng: () => number): void {
+  if (state.phase !== 'roundOver') return;
+  const allHumansReady = state.players.filter((p) => !p.isBot).every((p) => state.readyPlayerIds.includes(p.id));
+  if (!allHumansReady) return;
+
+  const summary = state.roundSummary!;
+  state.roundSummary = null;
+  state.readyPlayerIds = [];
+
+  if (summary.isFinalRound) {
     const totals = state.players.map((p) => ({ id: p.id, total: p.roundScores.reduce((a, b) => a + b, 0) }));
     const lowest = Math.min(...totals.map((t) => t.total));
     const winnerIds = totals.filter((t) => t.total === lowest).map((t) => t.id);
@@ -154,8 +188,8 @@ function resolveRound(state: GameState, rng: () => number, wentOutBy: string | n
     return;
   }
 
-  const nextEngineValue = PIP_MAX - state.roundNumber; // roundNumber is 1-based & about to +1
-  dealRound(state, state.roundNumber + 1, nextEngineValue, nextSeat(state.players.length, state.startingSeat), rng);
+  const nextEngineValue = PIP_MAX - summary.roundNumber; // roundNumber is 1-based & about to +1
+  dealRound(state, summary.roundNumber + 1, nextEngineValue, nextSeat(state.players.length, state.startingSeat), rng);
 }
 
 function endTurn(state: GameState): void {
@@ -241,6 +275,13 @@ export function applyAction(
         break;
       }
       endTurn(next);
+      break;
+    }
+
+    case 'readyForNextRound': {
+      next.readyPlayerIds = [...next.readyPlayerIds, player.id];
+      next.log.push({ type: 'playerReady', by: player.id });
+      maybeAdvanceFromRoundOver(next, rng);
       break;
     }
   }

@@ -49,6 +49,13 @@ export function legalPlaysForSeat(state: GameState, seatIndex: number): PlayTile
  * well-defined: a play if any exists, otherwise a single draw (once per turn segment, if the
  * boneyard isn't empty), otherwise a pass — there's never a dead end with zero legal moves. */
 export function getLegalActions(state: GameState, seatIndex: number): PlayerAction[] {
+  if (state.phase === 'roundOver') {
+    // Not turn-based — every human player independently has a legal "ready" action (once)
+    // regardless of whose turn it was when the round ended.
+    const player = state.players[seatIndex];
+    if (!player || player.isBot || state.readyPlayerIds.includes(player.id)) return [];
+    return [{ type: 'readyForNextRound' }];
+  }
   if (state.phase !== 'playing' || state.actingSeat !== seatIndex) return [];
 
   const plays = legalPlaysForSeat(state, seatIndex);

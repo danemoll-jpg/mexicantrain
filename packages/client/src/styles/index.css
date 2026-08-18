@@ -1079,3 +1079,66 @@ button {
   font-size: 1.1rem;
   font-weight: 700;
 }
+
+/* ---------- Round summary (between-rounds pause) ---------- */
+
+.round-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 1rem 0;
+  text-align: left;
+}
+
+.round-summary-row {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(230, 183, 63, 0.25);
+  border-radius: 0.6rem;
+  padding: 0.6rem 0.8rem;
+}
+
+.round-summary-row--best {
+  border-color: var(--gold);
+  background: rgba(230, 183, 63, 0.12);
+}
+
+.round-summary-row__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.round-summary-row__name {
+  font-weight: 700;
+}
+
+.round-summary-row__score {
+  font-weight: 700;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.round-summary-row__total {
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+.round-summary-row__hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.round-summary-row__empty {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+.round-summary__waiting {
+  margin-top: 1.25rem;
+  opacity: 0.85;
+  font-style: italic;
+}
