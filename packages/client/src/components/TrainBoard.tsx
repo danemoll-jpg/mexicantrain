@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { PublicGameState, Tile, Train } from '@mexicantrain/engine';
 import { Domino } from './Domino';
 import { playableTrainIds } from '../lib/legality';
@@ -46,6 +47,17 @@ function TrainRow({
   const lastTile = chain[chain.length - 1]?.tile;
   const openDoubleHere = isOpenDoubleTarget;
 
+  // Keep the track scrolled to its far end — the most recently played tile (and the open-end
+  // marker right after it) — by default, since that's the one piece of information that
+  // actually matters right now. Older tiles are still there to scroll back to manually; this
+  // only snaps back to the end when a new tile actually gets added to THIS train (including
+  // the very first render, so a page load/rejoin doesn't start scrolled to the hub instead).
+  const trackRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const track = trackRef.current;
+    if (track) track.scrollLeft = track.scrollWidth;
+  }, [train.tiles.length]);
+
   return (
     <div
       className={[
@@ -73,6 +85,7 @@ function TrainRow({
           another interactive control inside it. */}
       <div
         className="train-row__track"
+        ref={trackRef}
         role="button"
         tabIndex={onClick ? 0 : -1}
         aria-label={`Play onto ${label}`}
