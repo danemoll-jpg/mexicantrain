@@ -22,9 +22,11 @@
 
 import { doc, onSnapshot, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
 import {
+  applyAction,
   BotDifficulty,
   BotPersonalityId,
   CommentaryLine,
+  CommentaryProvider,
   createMatch,
   DEFAULT_RULES,
   GameState,
@@ -234,6 +236,37 @@ export async function writeGameState(
   const commentary = [...room.commentary, ...appended].slice(-COMMENTARY_LIMIT);
   await updateDoc(roomRef(code), { gameState: nextState, commentary, nextCommentarySeq: seq });
   return { commentary, nextCommentarySeq: seq };
+}
+
+/** Marks a seat ready for the next round during the 'roundOver' pause. Unlike every other
+ * move in the game, ready-ing up is NOT turn-based — any number of players can legitimately
+ * click it within the same pause, each from their own possibly-stale local `gameState`. A
+ * plain writeGameState() (read-nothing, blind overwrite) would let two humans clicking within
+ * the same round-trip silently clobber one another's ready flag and hang the room waiting on
+ * someone who already clicked. So this re-reads the room and applies the action inside a
+ * transaction instead — Firestore retries it automatically on write contention. */
+export async function sendReadyForNextRound(code: string, seatId: string, provider: CommentaryProvider): Promise<void> {
+  await runTransaction(db, async (tx) => {
+    const ref = roomRef(code);
+    const snap = await tx.get(ref);
+    if (!snap.exists()) throw new Error('Room not found.');
+    const room = snap.data() as RoomDoc;
+    if (!room.gameState) throw new Error('No game in progress.');
+    const seatIndex = room.seats.findIndex((s) => s.id === seatId);
+    if (seatIndex === -1) throw new Error('Not seated in this room.');
+
+    const prevLogLength = room.gameState.log.length;
+    const next = applyAction(room.gameState, seatIndex, { type: 'readyForNextRound' });
+    // Readying up can, once everyone's in, cascade straight into dealing the next round or
+    // ending the match — same commentary-worthy events (roundStarted, matchOver, …) those
+    // produce anywhere else in the game, so they still deserve a line here.
+    const newCommentary = await commentaryForEvents(provider, next.log.slice(prevLogLength), next);
+    let seq = room.nextCommentarySeq;
+    const appended = newCommentary.map((line) => ({ ...line, seq: seq++ }));
+    const commentary = [...room.commentary, ...appended].slice(-COMMENTARY_LIMIT);
+
+    tx.update(ref, { gameState: next, commentary, nextCommentarySeq: seq });
+  });
 }
 
 /** Resets a room back to its lobby, keeping the same seats — "New match" without leaving the

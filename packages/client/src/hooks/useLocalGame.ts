@@ -141,7 +141,9 @@ export function useLocalGame(): UseLocalGame {
     (action: PlayerAction) => {
       if (!state) return;
       const seatIndex = state.players.findIndex((p) => p.id === HUMAN_ID);
-      if (state.actingSeat !== seatIndex) {
+      // 'readyForNextRound' isn't turn-based — it's legal any time the round-over screen is up,
+      // regardless of whose turn it was when the round ended.
+      if (action.type !== 'readyForNextRound' && state.actingSeat !== seatIndex) {
         setError("It's not your turn.");
         return;
       }

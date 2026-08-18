@@ -5,6 +5,7 @@ import {
   createMatch,
   EngineConfig,
   getCurrentLegalActions,
+  getLegalActions,
   GameState,
   ROUNDS_PER_MATCH,
 } from '../src/index.js';
@@ -136,6 +137,112 @@ describe('allTrainsPublic house rule', () => {
       expect(state.rules.allTrainsPublic).toBe(true);
     });
   }
+});
+
+/** Drives `state` with the shared bot heuristic (regardless of a seat's isBot flag — the
+ * heuristic doesn't care) until the round in progress ends, i.e. until the engine parks in
+ * 'roundOver'. Used by the readiness-gate tests below, which need a human seat in the mix. */
+function driveUntilRoundOver(state: GameState, rng: () => number): GameState {
+  let current = state;
+  let steps = 0;
+  while (current.phase === 'playing' && steps < 20000) {
+    const legal = getCurrentLegalActions(current)!;
+    const decision = chooseBestAction(current, legal.seatIndex)!;
+    current = applyAction(current, legal.seatIndex, decision.action, rng);
+    steps += 1;
+  }
+  return current;
+}
+
+describe('round-over readiness gate', () => {
+  it('pauses in roundOver with a summary, auto-readying bots but not the human', () => {
+    const rng = seededRng(42);
+    const playerConfigs: EngineConfig['playerConfigs'] = [
+      { id: 'human', name: 'Human', isBot: false },
+      { id: 'bot0', name: 'Bot', isBot: true },
+    ];
+    const state = driveUntilRoundOver(createMatch({ playerConfigs, rng }), rng);
+
+    expect(state.phase).toBe('roundOver');
+    expect(getCurrentLegalActions(state)).toBeNull();
+    expect(state.roundSummary).not.toBeNull();
+    expect(state.roundSummary!.roundNumber).toBe(1);
+    expect(state.roundSummary!.isFinalRound).toBe(false);
+    expect(state.roundSummary!.players.map((p) => p.playerId).sort()).toEqual(['bot0', 'human']);
+    expect(state.readyPlayerIds).toEqual(['bot0']);
+
+    // The bot itself has no legal "ready" action (it's already readied) and the human does.
+    const botSeat = state.players.findIndex((p) => p.id === 'bot0');
+    const humanSeat = state.players.findIndex((p) => p.id === 'human');
+    expect(getLegalActions(state, botSeat)).toEqual([]);
+    expect(getLegalActions(state, humanSeat)).toEqual([{ type: 'readyForNextRound' }]);
+  });
+
+  it('deals round 2 only once the human readies up', () => {
+    const rng = seededRng(42);
+    const playerConfigs: EngineConfig['playerConfigs'] = [
+      { id: 'human', name: 'Human', isBot: false },
+      { id: 'bot0', name: 'Bot', isBot: true },
+    ];
+    const roundOver = driveUntilRoundOver(createMatch({ playerConfigs, rng }), rng);
+    const humanSeat = roundOver.players.findIndex((p) => p.id === 'human');
+
+    const next = applyAction(roundOver, humanSeat, { type: 'readyForNextRound' }, rng);
+    expect(next.phase).toBe('playing');
+    expect(next.roundNumber).toBe(2);
+    expect(next.roundSummary).toBeNull();
+    expect(next.readyPlayerIds).toEqual([]);
+    for (const p of next.players) expect(p.roundScores).toHaveLength(1);
+  });
+
+  it('rejects a bot seat sending readyForNextRound, and rejects a repeat from the same human', () => {
+    const rng = seededRng(42);
+    const playerConfigs: EngineConfig['playerConfigs'] = [
+      { id: 'human1', name: 'Human 1', isBot: false },
+      { id: 'human2', name: 'Human 2', isBot: false },
+      { id: 'bot0', name: 'Bot', isBot: true },
+    ];
+    const roundOver = driveUntilRoundOver(createMatch({ playerConfigs, rng }), rng);
+    expect(roundOver.phase).toBe('roundOver');
+
+    const botSeat = roundOver.players.findIndex((p) => p.id === 'bot0');
+    expect(() => applyAction(roundOver, botSeat, { type: 'readyForNextRound' }, rng)).toThrow();
+
+    const human1Seat = roundOver.players.findIndex((p) => p.id === 'human1');
+    const afterFirstReady = applyAction(roundOver, human1Seat, { type: 'readyForNextRound' }, rng);
+    // Still waiting on human2 — the round hasn't advanced yet.
+    expect(afterFirstReady.phase).toBe('roundOver');
+    expect(afterFirstReady.readyPlayerIds.sort()).toEqual(['bot0', 'human1']);
+    expect(() => applyAction(afterFirstReady, human1Seat, { type: 'readyForNextRound' }, rng)).toThrow();
+
+    const human2Seat = afterFirstReady.players.findIndex((p) => p.id === 'human2');
+    const afterSecondReady = applyAction(afterFirstReady, human2Seat, { type: 'readyForNextRound' }, rng);
+    expect(afterSecondReady.phase).toBe('playing');
+    expect(afterSecondReady.roundNumber).toBe(2);
+  });
+
+  it('gates the transition into matchOver behind the same readiness check on the final round', () => {
+    const rng = seededRng(7);
+    const playerConfigs: EngineConfig['playerConfigs'] = [
+      { id: 'human', name: 'Human', isBot: false },
+      { id: 'bot0', name: 'Bot', isBot: true },
+    ];
+    let state = createMatch({ playerConfigs, rng });
+    const humanSeat = state.players.findIndex((p) => p.id === 'human');
+
+    for (let round = 1; round <= ROUNDS_PER_MATCH; round++) {
+      state = driveUntilRoundOver(state, rng);
+      expect(state.phase).toBe('roundOver');
+      expect(state.roundSummary!.isFinalRound).toBe(round === ROUNDS_PER_MATCH);
+      // Even on the last round, the match doesn't end until the human readies up.
+      expect(state.matchWinnerIds).toBeNull();
+      state = applyAction(state, humanSeat, { type: 'readyForNextRound' }, rng);
+    }
+
+    expect(state.phase).toBe('matchOver');
+    expect(state.matchWinnerIds).not.toBeNull();
+    for (const p of state.players) expect(p.roundScores).toHaveLength(ROUNDS_PER_MATCH);
+  });
 });
 
 describe('open double', () => {
