@@ -68,9 +68,11 @@ export function RoundSummaryScreen({ state, onReady }: RoundSummaryScreenProps) 
         </div>
 
         {iAmHuman && !iAmReady && (
-          <button type="button" className="game-over__button" onClick={handleReady}>
-            {summary.isFinalRound ? 'See final results 🏆' : 'Next round →'}
-          </button>
+          <div className="game-over__actions">
+            <button type="button" className="game-over__button" onClick={handleReady}>
+              {summary.isFinalRound ? 'See final results 🏆' : 'Next round →'}
+            </button>
+          </div>
         )}
         {(!iAmHuman || iAmReady) && (
           <p className="round-summary__waiting">
