@@ -195,6 +195,8 @@ button {
   padding: 0;
   margin-bottom: 1rem;
   font-size: 0.9rem;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .back-link--floating {
@@ -1068,8 +1070,14 @@ button {
   margin-bottom: 1rem;
 }
 
-.game-over__button {
+.game-over__actions {
+  display: flex;
+  gap: 0.75rem;
   margin-top: 1.25rem;
+}
+
+.game-over__button {
+  flex: 1;
   width: 100%;
   padding: 0.9rem;
   border-radius: 0.6rem;
@@ -1078,6 +1086,16 @@ button {
   color: var(--felt-dark);
   font-size: 1.1rem;
   font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.game-over__button--secondary {
+  background: none;
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  padding: calc(0.9rem - 2px);
 }
 
 /* ---------- Round summary (between-rounds pause) ---------- */
