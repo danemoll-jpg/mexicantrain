@@ -1,3 +1,5 @@
+import { GAME_HUB_URL } from '../lib/hub';
+
 interface HomeScreenProps {
   onSelectLocal: () => void;
   onSelectOnline: () => void;
@@ -6,6 +8,9 @@ interface HomeScreenProps {
 export function HomeScreen({ onSelectLocal, onSelectOnline }: HomeScreenProps) {
   return (
     <div className="start-screen">
+      <a className="back-link back-link--floating" href={GAME_HUB_URL}>
+        🎮 All Games
+      </a>
       <div className="start-screen__card">
         <h1>🚂 Mexican Train</h1>
         <p className="start-screen__subtitle">

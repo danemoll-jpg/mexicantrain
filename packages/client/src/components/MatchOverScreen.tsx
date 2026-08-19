@@ -1,4 +1,5 @@
 import { PublicGameState, ROUNDS_PER_MATCH } from '@mexicantrain/engine';
+import { GAME_HUB_URL } from '../lib/hub';
 
 interface MatchOverScreenProps {
   state: PublicGameState;
@@ -55,9 +56,14 @@ export function MatchOverScreen({ state, onPlayAgain }: MatchOverScreenProps) {
           </table>
         </div>
 
-        <button type="button" className="game-over__button" onClick={onPlayAgain}>
-          Play again
-        </button>
+        <div className="game-over__actions">
+          <button type="button" className="game-over__button" onClick={onPlayAgain}>
+            Play again
+          </button>
+          <a className="game-over__button game-over__button--secondary" href={GAME_HUB_URL}>
+            🎮 Game Hub
+          </a>
+        </div>
       </div>
     </div>
   );
