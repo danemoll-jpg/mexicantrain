@@ -1,12 +1,18 @@
+import { useState } from 'react';
 import { PublicGameState, ROUNDS_PER_MATCH } from '@mexicantrain/engine';
 import { GAME_HUB_URL } from '../lib/hub';
+import { LeaderboardPanel } from './LeaderboardPanel';
 
 interface MatchOverScreenProps {
   state: PublicGameState;
   onPlayAgain: () => void;
+  /** Player id → 1-based all-time rank, for whichever human players' final totals just landed
+   * on the shared top-10 leaderboard. */
+  newRecordRanks: Record<string, number>;
 }
 
-export function MatchOverScreen({ state, onPlayAgain }: MatchOverScreenProps) {
+export function MatchOverScreen({ state, onPlayAgain, newRecordRanks }: MatchOverScreenProps) {
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const winnerIds = state.matchWinnerIds ?? [];
   const isDraw = winnerIds.length > 1;
   const iWon = winnerIds.includes(state.players[state.viewerSeatIndex]?.id ?? '');
@@ -45,7 +51,12 @@ export function MatchOverScreen({ state, onPlayAgain }: MatchOverScreenProps) {
             <tbody>
               {sorted.map((p) => (
                 <tr key={p.id} className={winnerIds.includes(p.id) ? 'scorecard-table__winner' : ''}>
-                  <td>{p.name}</td>
+                  <td>
+                    {p.name}
+                    {newRecordRanks[p.id] && (
+                      <span className="new-record-badge">🏅 New Record! #{newRecordRanks[p.id]} All-Time</span>
+                    )}
+                  </td>
                   {rounds.map((r) => (
                     <td key={r}>{p.roundScores[r - 1] ?? '–'}</td>
                   ))}
@@ -60,11 +71,15 @@ export function MatchOverScreen({ state, onPlayAgain }: MatchOverScreenProps) {
           <button type="button" className="game-over__button" onClick={onPlayAgain}>
             Play again
           </button>
+          <button type="button" className="game-over__button game-over__button--secondary" onClick={() => setShowLeaderboard(true)}>
+            🏆 Leaderboard
+          </button>
           <a className="game-over__button game-over__button--secondary" href={GAME_HUB_URL}>
             🎮 Game Hub
           </a>
         </div>
       </div>
+      {showLeaderboard && <LeaderboardPanel onClose={() => setShowLeaderboard(false)} />}
     </div>
   );
 }

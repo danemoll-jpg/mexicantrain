@@ -1072,12 +1072,13 @@ button {
 
 .game-over__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 1.25rem;
 }
 
 .game-over__button {
-  flex: 1;
+  flex: 1 1 8rem;
   width: 100%;
   padding: 0.9rem;
   border-radius: 0.6rem;
@@ -1096,6 +1097,19 @@ button {
   border: 2px solid var(--gold);
   color: var(--gold);
   padding: calc(0.9rem - 2px);
+}
+
+.new-record-badge {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--felt-dark);
+  white-space: nowrap;
+  width: fit-content;
 }
 
 /* ---------- Round summary (between-rounds pause) ---------- */

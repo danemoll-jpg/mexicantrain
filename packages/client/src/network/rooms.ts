@@ -75,6 +75,11 @@ export interface RoomDoc {
   gameState: GameState | null;
   commentary: RoomCommentaryEntry[];
   nextCommentarySeq: number;
+  /** Player id → 1-based all-time rank, for whichever human players' final totals landed on
+   * the shared top-10 leaderboard at the end of the current match. Written once by the host
+   * (see useOnlineRoom) after the leaderboard save resolves, so every connected client's
+   * match-over screen — not just the host's — can show the "New Record" badge. */
+  newRecordRanks?: Record<string, number>;
 }
 
 function generateRoomCode(length = 4): string {
@@ -272,7 +277,20 @@ export async function sendReadyForNextRound(code: string, seatId: string, provid
 /** Resets a room back to its lobby, keeping the same seats — "New match" without leaving the
  * room. */
 export async function resetToLobby(code: string): Promise<void> {
-  await updateDoc(roomRef(code), { phase: 'lobby', gameState: null, commentary: [], nextCommentarySeq: 0 });
+  await updateDoc(roomRef(code), {
+    phase: 'lobby',
+    gameState: null,
+    commentary: [],
+    nextCommentarySeq: 0,
+    newRecordRanks: {},
+  });
+}
+
+/** Host-only: syncs the just-computed leaderboard ranks (see useOnlineRoom's leaderboard
+ * effect) into the room doc, so every connected client's match-over screen can show the "New
+ * Record" badge — not just the host's own, which already has it locally. */
+export async function updateNewRecordRanks(code: string, ranks: Record<string, number>): Promise<void> {
+  await updateDoc(roomRef(code), { newRecordRanks: ranks });
 }
 
 export function isRoomHost(room: RoomDoc, clientId: string): boolean {
