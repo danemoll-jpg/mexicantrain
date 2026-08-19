@@ -34,6 +34,7 @@ import {
   setRoomRules,
   startMatch as startMatchRequest,
   subscribeToRoom,
+  updateNewRecordRanks,
   writeGameState,
 } from '../network/rooms';
 
@@ -89,6 +90,10 @@ export interface UseOnlineRoom {
   clearHint: () => void;
   dismissCommentary: (id: string) => void;
   newMatch: () => void;
+  /** Player id → 1-based all-time rank, for whichever human players' final totals just landed
+   * on the shared top-10 leaderboard. Empty until the host's leaderboard write resolves and
+   * syncs into the room doc. */
+  newRecordRanks: Record<string, number>;
 }
 
 /** Online (Firestore-synced) room: mirrors the shape of the local-play hook, but backed by a
@@ -201,22 +206,29 @@ export function useOnlineRoom(): UseOnlineRoom {
   // without this host-only gate, a match's scores would get added once PER connected device
   // instead of once total.
   useEffect(() => {
-    if (!isHost || !gameState || gameState.phase !== 'matchOver' || submittedLeaderboard.current) return;
+    if (!isHost || !code || !gameState || gameState.phase !== 'matchOver' || submittedLeaderboard.current) return;
     submittedLeaderboard.current = true;
     // Bots don't compete for leaderboard spots — only human results get submitted, so the
     // board reflects real players, not however well the heuristic bot strategy happens to play.
-    const results = gameState.players
-      .filter((p) => !p.isBot)
-      .map((p) => ({
-        name: p.name,
-        score: p.roundScores.reduce((a, b) => a + b, 0),
-        isAi: false,
-      }));
-    if (results.length === 0) return;
-    addScoresToGlobalLeaderboard(results).catch(() => {
-      // Leaderboard is a nice-to-have — a failed write shouldn't disrupt the game-over screen.
-    });
-  }, [isHost, gameState]);
+    const humans = gameState.players.filter((p) => !p.isBot);
+    if (humans.length === 0) return;
+    const results = humans.map((p) => ({
+      name: p.name,
+      score: p.roundScores.reduce((a, b) => a + b, 0),
+      isAi: false,
+    }));
+    addScoresToGlobalLeaderboard(results)
+      .then((ranks) => {
+        const next: Record<string, number> = {};
+        ranks.forEach((rank, i) => {
+          if (rank !== null) next[humans[i].id] = rank;
+        });
+        if (Object.keys(next).length > 0) return updateNewRecordRanks(code, next);
+      })
+      .catch(() => {
+        // Leaderboard is a nice-to-have — a failed write shouldn't disrupt the game-over screen.
+      });
+  }, [isHost, code, gameState]);
 
   const createAndJoin = useCallback(async (hostName: string, hostIcon: string) => {
     setError(null);
@@ -391,5 +403,6 @@ export function useOnlineRoom(): UseOnlineRoom {
     clearHint,
     dismissCommentary,
     newMatch,
+    newRecordRanks: room?.newRecordRanks ?? {},
   };
 }

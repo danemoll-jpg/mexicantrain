@@ -55,6 +55,10 @@ export interface UseLocalGame {
   newMatch: () => void;
   clearHint: () => void;
   dismissCommentary: (id: string) => void;
+  /** Player id → 1-based all-time rank, for whichever human players' final totals just landed
+   * on the shared top-10 leaderboard. Empty until the leaderboard write resolves after
+   * matchOver; cleared again at the start of the next match. */
+  newRecordRanks: Record<string, number>;
 }
 
 /** Runs a Mexican Train match entirely in the browser — no server, no network. Local
@@ -79,6 +83,7 @@ export function useLocalGame(): UseLocalGame {
   } | null>(null);
   const difficultyRef = useRef<BotDifficulty>(DEFAULT_DIFFICULTY);
   const submittedLeaderboard = useRef(false);
+  const [newRecordRanks, setNewRecordRanks] = useState<Record<string, number>>({});
 
   const notifyEvents = useCallback(async (events: GameEvent[], forState: GameState) => {
     if (events.length === 0) return;
@@ -112,6 +117,7 @@ export function useLocalGame(): UseLocalGame {
       difficultyRef.current = difficulty;
       setMyIcon(icon);
       submittedLeaderboard.current = false;
+      setNewRecordRanks({});
       const count = Math.min(MAX_SEATS, Math.max(2, Math.floor(totalPlayers) || 3));
       const seats: SeatConfig[] = [{ id: HUMAN_ID, name: humanName.trim() || 'You', isBot: false }];
       const used: SeatConfig['personality'][] = [];
@@ -202,18 +208,25 @@ export function useLocalGame(): UseLocalGame {
     submittedLeaderboard.current = true;
     // Bots don't compete for leaderboard spots — only human results get submitted, so the
     // board reflects real players, not however well the heuristic bot strategy happens to play.
-    const results = state.players
-      .filter((p) => !p.isBot)
-      .map((p) => ({
-        name: p.name,
-        score: p.roundScores.reduce((a, b) => a + b, 0),
-        isAi: false,
-      }));
-    if (results.length === 0) return;
-    addScoresToGlobalLeaderboard(results).catch(() => {
-      // Leaderboard is a nice-to-have — a failed write (e.g. Firebase not configured yet)
-      // shouldn't disrupt the game-over screen.
-    });
+    const humans = state.players.filter((p) => !p.isBot);
+    if (humans.length === 0) return;
+    const results = humans.map((p) => ({
+      name: p.name,
+      score: p.roundScores.reduce((a, b) => a + b, 0),
+      isAi: false,
+    }));
+    addScoresToGlobalLeaderboard(results)
+      .then((ranks) => {
+        const next: Record<string, number> = {};
+        ranks.forEach((rank, i) => {
+          if (rank !== null) next[humans[i].id] = rank;
+        });
+        setNewRecordRanks(next);
+      })
+      .catch(() => {
+        // Leaderboard is a nice-to-have — a failed write (e.g. Firebase not configured yet)
+        // shouldn't disrupt the game-over screen.
+      });
   }, [state]);
 
   const publicState = state ? redactState(state, HUMAN_ID) : null;
@@ -234,5 +247,6 @@ export function useLocalGame(): UseLocalGame {
     newMatch,
     clearHint,
     dismissCommentary,
+    newRecordRanks,
   };
 }

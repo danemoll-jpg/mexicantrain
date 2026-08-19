@@ -30,6 +30,9 @@ interface GameViewProps {
   clearHint: () => void;
   dismissCommentary: (id: string) => void;
   newMatch: () => void;
+  /** Player id → 1-based all-time rank, for whichever human players' final totals just landed
+   * on the shared top-10 leaderboard — see MatchOverScreen's "New Record" badge. */
+  newRecordRanks: Record<string, number>;
   headerExtra?: ReactNode;
 }
 
@@ -49,6 +52,7 @@ export function GameView({
   clearHint,
   dismissCommentary,
   newMatch,
+  newRecordRanks,
   headerExtra,
 }: GameViewProps) {
   const [showScorecard, setShowScorecard] = useState(false);
@@ -180,7 +184,9 @@ export function GameView({
           onReady={() => sendAction({ type: 'readyForNextRound' })}
         />
       )}
-      {publicState.phase === 'matchOver' && <MatchOverScreen state={publicState} onPlayAgain={newMatch} />}
+      {publicState.phase === 'matchOver' && (
+        <MatchOverScreen state={publicState} onPlayAgain={newMatch} newRecordRanks={newRecordRanks} />
+      )}
     </div>
   );
 }
