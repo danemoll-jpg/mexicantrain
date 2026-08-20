@@ -842,8 +842,15 @@ button {
 /* ---------- Commentary feed ---------- */
 
 .commentary-feed {
+  /* Anchored to the top, not the bottom — on a wide-but-short viewport (iPad landscape
+     especially) the hand tray sits close to the bottom edge, and a bottom-anchored toast
+     landed right on top of it, hiding the very tiles it was covering commentary about.
+     top: 6.5rem clears both the sound-toggle/back-link buttons (fixed at top: 1.1rem, ~2.6rem
+     tall) AND the round banner's own buttons (Scorecard/Leaderboard/How to Play) just below
+     them, landing over the read-only player-avatars strip instead — the least clickable thing
+     on screen, rather than the hand tray or anything with its own buttons. */
   position: fixed;
-  bottom: 1rem;
+  top: 6.5rem;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
