@@ -49,6 +49,7 @@ function LocalGame({ onBack }: { onBack: () => void }) {
       clearHint={game.clearHint}
       dismissCommentary={game.dismissCommentary}
       newMatch={game.newMatch}
+      newRecordRanks={game.newRecordRanks}
     />
   );
 }
@@ -109,6 +110,7 @@ function OnlineGame({ onBack }: { onBack: () => void }) {
       clearHint={room.clearHint}
       dismissCommentary={room.dismissCommentary}
       newMatch={room.newMatch}
+      newRecordRanks={room.newRecordRanks}
       headerExtra={
         <button
           type="button"

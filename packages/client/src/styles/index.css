@@ -195,6 +195,8 @@ button {
   padding: 0;
   margin-bottom: 1rem;
   font-size: 0.9rem;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .back-link--floating {
@@ -879,8 +881,15 @@ button {
 /* ---------- Commentary feed ---------- */
 
 .commentary-feed {
+  /* Anchored to the top, not the bottom — on a wide-but-short viewport (iPad landscape
+     especially) the hand tray sits close to the bottom edge, and a bottom-anchored toast
+     landed right on top of it, hiding the very tiles it was covering commentary about.
+     top: 6.5rem clears both the sound-toggle/back-link buttons (fixed at top: 1.1rem, ~2.6rem
+     tall) AND the round banner's own buttons (Scorecard/Leaderboard/How to Play) just below
+     them, landing over the read-only player-avatars strip instead — the least clickable thing
+     on screen, rather than the hand tray or anything with its own buttons. */
   position: fixed;
-  bottom: 1rem;
+  top: 6.5rem;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -1107,8 +1116,15 @@ button {
   margin-bottom: 1rem;
 }
 
-.game-over__button {
+.game-over__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   margin-top: 1.25rem;
+}
+
+.game-over__button {
+  flex: 1 1 8rem;
   width: 100%;
   padding: 0.9rem;
   border-radius: 0.6rem;
@@ -1117,4 +1133,90 @@ button {
   color: var(--felt-dark);
   font-size: 1.1rem;
   font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.game-over__button--secondary {
+  background: none;
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  padding: calc(0.9rem - 2px);
+}
+
+.new-record-badge {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--felt-dark);
+  white-space: nowrap;
+  width: fit-content;
+}
+
+/* ---------- Round summary (between-rounds pause) ---------- */
+
+.round-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 1rem 0;
+  text-align: left;
+}
+
+.round-summary-row {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(230, 183, 63, 0.25);
+  border-radius: 0.6rem;
+  padding: 0.6rem 0.8rem;
+}
+
+.round-summary-row--best {
+  border-color: var(--gold);
+  background: rgba(230, 183, 63, 0.12);
+}
+
+.round-summary-row__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.round-summary-row__name {
+  font-weight: 700;
+}
+
+.round-summary-row__score {
+  font-weight: 700;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.round-summary-row__total {
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+.round-summary-row__hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.round-summary-row__empty {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+.round-summary__waiting {
+  margin-top: 1.25rem;
+  opacity: 0.85;
+  font-style: italic;
 }

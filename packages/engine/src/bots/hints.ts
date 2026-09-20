@@ -26,6 +26,8 @@ function describeAction(action: PlayerAction, state: GameState, seatIndex: numbe
       return 'Draw a tile from the boneyard';
     case 'passTurn':
       return "Pass — you can't play";
+    case 'readyForNextRound':
+      return 'Ready up for the next round';
   }
 }
 

@@ -31,6 +31,15 @@ function reasonFor(state: GameState, trainId: string, playerId: string): ReasonT
   return 'shedHeavyOpponentTrain';
 }
 
+/** Reason tag for any non-`playTile` action — every one of these is the only legal move in
+ * its situation (a forced draw, a forced pass, or readying up during the round-over pause),
+ * so there's nothing to rank between alternatives. */
+function reasonForNonPlay(action: Exclude<PlayerAction, { type: 'playTile' }>): ReasonTag {
+  if (action.type === 'drawTile') return 'forcedDraw';
+  if (action.type === 'passTurn') return 'forcedPass';
+  return 'onlyOption'; // readyForNextRound
+}
+
 /** Scores every legal action for `seatIndex` and returns them best-first. This is the one
  * "brain" behind both the human hint button and every bot's play — difficulty (see
  * chooseBotAction below) only changes how reliably a bot acts on this ranking, never the
@@ -46,12 +55,12 @@ export function scoreActions(state: GameState, seatIndex: number): ScoredAction[
 
   if (actions.length === 1 && actions[0].type !== 'playTile') {
     const a = actions[0];
-    return [{ action: a, score: 0, reason: a.type === 'drawTile' ? 'forcedDraw' : 'forcedPass' }];
+    return [{ action: a, score: 0, reason: reasonForNonPlay(a) }];
   }
 
   const scored: ScoredAction[] = actions.map((action) => {
     if (action.type !== 'playTile') {
-      return { action, score: 0, reason: action.type === 'drawTile' ? 'forcedDraw' : 'forcedPass' };
+      return { action, score: 0, reason: reasonForNonPlay(action) };
     }
     if (actions.length === 1) {
       return { action, score: 0, reason: 'onlyOption' };

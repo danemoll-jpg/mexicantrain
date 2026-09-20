@@ -70,7 +70,20 @@ export interface PlayerState {
   roundScores: number[];
 }
 
-export type GamePhase = 'playing' | 'matchOver';
+export type GamePhase = 'playing' | 'roundOver' | 'matchOver';
+
+/** Snapshot taken the instant a round ends, before the next round's `dealRound` overwrites
+ * everyone's hand — this is what the round-summary screen renders while play is paused
+ * waiting for humans to ready up (see `readyPlayerIds`). `hand` is each player's final hand
+ * for the round, safe to show in full since the round it belonged to is already over. */
+export interface RoundSummary {
+  roundNumber: number;
+  wentOutBy: string | null;
+  /** True for round 13 (double-0) — the summary screen's "continue" button leads to the
+   * match-over screen instead of another round. */
+  isFinalRound: boolean;
+  players: Array<{ playerId: string; hand: Tile[]; roundScore: number; total: number }>;
+}
 
 /** Structured events emitted by the engine as it plays — the seam commentary/sound cues
  * hook into. */
@@ -97,6 +110,7 @@ export type GameEvent =
       wentOutBy: string | null;
       scores: Array<{ playerId: string; score: number; total: number }>;
     }
+  | { type: 'playerReady'; by: string }
   | { type: 'matchOver'; winnerIds: string[]; isDraw: boolean };
 
 /** Optional house rules, fixed for the whole match (chosen at setup, before round 1 is
@@ -151,6 +165,13 @@ export interface GameState {
   log: GameEvent[];
   /** Set once phase is 'matchOver' — lowest total wins; more than one id means a tie. */
   matchWinnerIds: string[] | null;
+  /** Populated only while `phase === 'roundOver'` — cleared again once play resumes (either
+   * the next round is dealt or the match ends). */
+  roundSummary: RoundSummary | null;
+  /** Player ids who've clicked "next round" during the current round-over pause. Bot seats
+   * are added automatically the moment the round ends — they never make anyone wait — so this
+   * only ever gates on human players. Reset each time a new round-over pause begins. */
+  readyPlayerIds: string[];
 }
 
 export interface EngineConfig {
@@ -164,8 +185,11 @@ export interface EngineConfig {
 export type PlayTileAction = { type: 'playTile'; tileId: string; trainId: string };
 export type DrawTileAction = { type: 'drawTile' };
 export type PassTurnAction = { type: 'passTurn' };
+/** Sent by a human player from the round-over summary screen. Legal only for that player's
+ * own seat, only while `phase === 'roundOver'`, and only once (see rules.ts). */
+export type ReadyForNextRoundAction = { type: 'readyForNextRound' };
 
-export type PlayerAction = PlayTileAction | DrawTileAction | PassTurnAction;
+export type PlayerAction = PlayTileAction | DrawTileAction | PassTurnAction | ReadyForNextRoundAction;
 
 export interface LegalActions {
   seatIndex: number;

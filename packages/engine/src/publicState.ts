@@ -1,4 +1,4 @@
-import { BotPersonalityId, GamePhase, GameState, MatchRules, Tile, Train } from './types.js';
+import { BotPersonalityId, GamePhase, GameState, MatchRules, RoundSummary, Tile, Train } from './types.js';
 
 /** A player as any viewer is allowed to see them — `hand` (the actual tiles) is only
  * populated for the viewer's own seat; everyone else just exposes `handCount`, the way an
@@ -29,6 +29,11 @@ export interface PublicGameState {
   roundNumber: number;
   engineValue: number;
   matchWinnerIds: string[] | null;
+  /** Populated only while `phase === 'roundOver'` — see RoundSummary. Safe to expose in full
+   * (including every player's final hand) since the round it describes has already ended. */
+  roundSummary: RoundSummary | null;
+  /** Human player ids who've already readied up for the next round, during 'roundOver'. */
+  readyPlayerIds: string[];
   /** Which seat this view was built for. -1 if the viewer isn't seated (spectator). */
   viewerSeatIndex: number;
 }
@@ -59,6 +64,8 @@ export function redactState(state: GameState, viewerId: string): PublicGameState
     roundNumber: state.roundNumber,
     engineValue: state.engineValue,
     matchWinnerIds: state.matchWinnerIds,
+    roundSummary: state.roundSummary,
+    readyPlayerIds: state.readyPlayerIds,
     viewerSeatIndex,
   };
 }

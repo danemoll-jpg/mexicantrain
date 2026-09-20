@@ -9,11 +9,11 @@ export function isMyTurn(state: PublicGameState): boolean {
 }
 
 export function canDraw(state: PublicGameState): boolean {
-  return isMyTurn(state) && !state.drawnThisSegment && state.boneyardCount > 0;
+  return isMyTurn(state) && !hasAnyLegalPlay(state) && !state.drawnThisSegment && state.boneyardCount > 0;
 }
 
 export function canPass(state: PublicGameState): boolean {
-  return isMyTurn(state) && (state.drawnThisSegment || state.boneyardCount === 0);
+  return isMyTurn(state) && !hasAnyLegalPlay(state) && (state.drawnThisSegment || state.boneyardCount === 0);
 }
 
 /** Who can play on a train, from the viewer's seat:

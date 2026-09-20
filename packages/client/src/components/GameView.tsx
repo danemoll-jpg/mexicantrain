@@ -7,6 +7,7 @@ import { HintPanel } from './HintPanel';
 import { HowToPlay } from './HowToPlay';
 import { LeaderboardPanel } from './LeaderboardPanel';
 import { MatchOverScreen } from './MatchOverScreen';
+import { RoundSummaryScreen } from './RoundSummaryScreen';
 import { ScoreCard } from './ScoreCard';
 import { SoundToggle } from './SoundToggle';
 import { TrainBoard } from './TrainBoard';
@@ -31,6 +32,9 @@ interface GameViewProps {
   clearHint: () => void;
   dismissCommentary: (id: string) => void;
   newMatch: () => void;
+  /** Player id → 1-based all-time rank, for whichever human players' final totals just landed
+   * on the shared top-10 leaderboard — see MatchOverScreen's "New Record" badge. */
+  newRecordRanks: Record<string, number>;
   headerExtra?: ReactNode;
 }
 
@@ -50,6 +54,7 @@ export function GameView({
   clearHint,
   dismissCommentary,
   newMatch,
+  newRecordRanks,
   headerExtra,
 }: GameViewProps) {
   const [showScorecard, setShowScorecard] = useState(false);
@@ -184,7 +189,16 @@ export function GameView({
       {showHowToPlay && (
         <HowToPlay onClose={() => setShowHowToPlay(false)} allTrainsPublicInThisMatch={publicState.rules.allTrainsPublic} />
       )}
-      {publicState.phase === 'matchOver' && <MatchOverScreen state={publicState} onPlayAgain={newMatch} />}
+      {publicState.phase === 'roundOver' && publicState.roundSummary && (
+        <RoundSummaryScreen
+          key={publicState.roundSummary.roundNumber}
+          state={publicState}
+          onReady={() => sendAction({ type: 'readyForNextRound' })}
+        />
+      )}
+      {publicState.phase === 'matchOver' && (
+        <MatchOverScreen state={publicState} onPlayAgain={newMatch} newRecordRanks={newRecordRanks} />
+      )}
     </div>
   );
 }
