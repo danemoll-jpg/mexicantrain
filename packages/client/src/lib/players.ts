@@ -3,12 +3,12 @@
 import { BotPersonalityId, EngineConfig, PERSONALITIES } from '@mexicantrain/engine';
 import { DEFAULT_PLAYER_ICON } from './icons';
 
-export const BOT_PERSONALITIES: BotPersonalityId[] = ['ed', 'carol'];
-export const BOT_DISPLAY_NAMES: Record<BotPersonalityId, string> = { ed: 'Ed', carol: 'Carol' };
+export const BOT_PERSONALITIES: BotPersonalityId[] = ['ed', 'carol', 'gus'];
+export const BOT_DISPLAY_NAMES: Record<BotPersonalityId, string> = { ed: 'Ed', carol: 'Carol', gus: 'Gus' };
 
-/** Capped at 4 seats total — matches Golf's and Durak's table cap. Only two bot personalities
- * exist today (Ed, Carol), so a room can have at most 2 bot seats regardless of this cap
- * (nextBotPersonality below returns null once both are taken). */
+/** Capped at 4 seats total — matches Golf's and Durak's table cap. Three bot personalities
+ * exist today (Ed, Carol, Gus), enough to fill every seat but the human's; nextBotPersonality
+ * below returns null if more bots than personalities are ever requested. */
 export const MAX_SEATS = 4;
 
 export interface SeatConfig {
@@ -27,8 +27,8 @@ export function buildPlayerConfigs(seats: SeatConfig[]): EngineConfig['playerCon
   }));
 }
 
-/** Picks the first bot personality not already sitting at the table, or null if both
- * available personalities are taken. */
+/** Picks the first bot personality not already sitting at the table, or null if every
+ * available personality is taken. */
 export function nextBotPersonality(used: Array<BotPersonalityId | undefined>): BotPersonalityId | null {
   return BOT_PERSONALITIES.find((p) => !used.includes(p)) ?? null;
 }

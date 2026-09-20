@@ -14,11 +14,16 @@ Includes:
   can happen at the table — a real bottleneck, same as it plays at a real table.
 - **Online play**: create a room, share the 4-letter code, and play a real match against
   someone else from anywhere — synced live via Firestore, no server to run or keep alive.
-- Two **heuristic AI bots** with distinct personalities: **Ed** (quiet, confident, the
-  occasional dry joke) and **Carol** (loud, encouraging — until you make a great play, then
-  she gets sassy about it). They're married to each other, and Ed's got a soft spot for a
-  player named Dan while Carol's got one for a player named Juliana — sit down under either
-  name and watch the commentary change.
+- Three **heuristic AI bots** with distinct personalities: **Ed** (quiet, confident, the
+  occasional dry joke), **Carol** (loud, encouraging — until you make a great play, then
+  she gets sassy about it), and **Gus** (retired railroad conductor, deadpan, can't stop
+  making train puns). Play solo against one, two, or all three. Ed and Carol are married to
+  each other, and Ed's got a soft spot for a player named Dan while Carol's got one for a
+  player named Juliana — sit down under either name and watch the commentary change.
+- **Train access badges**: every train shows who can play on it, from your seat — 🔓 *Open to
+  all*, 🔑 *Only you* (your own private train), or 🔒 *Locked* (someone else's private train).
+- A 💬 button (top-right, next to the sound button) **silences the bots' chatter**; your
+  choice is remembered per browser.
 - A **"What should I play?" hint button** — powered by the exact same logic the bots use, so
   it never suggests an illegal move.
 - **Snarky commentary** that reacts to what's happening at the table — big doubles, someone
@@ -26,8 +31,9 @@ Includes:
 - A **shared top-10 leaderboard** (lowest 13-round pip total wins, humans only — bot scores
   never get submitted) — same Firestore-backed approach as Golf's/Durak's.
 - A live **scorecard** (📋 button, any time) showing every round so far plus running totals.
-- **Sound effects** — synthesized in the browser via the Web Audio API (no audio files to
-  ship). Mute anytime with the 🔊 button, top-right.
+- **Sound effects** — recorded effects generated with ElevenLabs (see "Sound effects" below),
+  with a synthesized Web Audio fallback for any cue that has no recording. Mute anytime with
+  the 🔊 button, top-right.
 
 ## Quick start
 
@@ -56,6 +62,30 @@ Runs the engine's test suite: tile-set/scoring checks, the open-double legality 
 and simulated full matches (bots playing bots — 2/3/4-player tables, several seeds each) that
 assert all 91 tiles are conserved at every single step and every match terminates with a
 valid winner.
+
+### Sound effects
+
+The game plays the recordings in `packages/client/public/sfx/` (listed in its `manifest.json`)
+and falls back to simple synthesized tones for any cue without one, so it always makes sound.
+To (re)generate the recordings with ElevenLabs' sound-effects API:
+
+```powershell
+# PowerShell (Windows)
+$env:ELEVENLABS_API_KEY = "your-key"
+npm run sfx               # only cues that have no recording yet
+npm run sfx -- play draw  # regenerate exactly these cues
+```
+
+```bash
+# bash / zsh (macOS, Linux, Git Bash)
+ELEVENLABS_API_KEY=your-key npm run sfx
+ELEVENLABS_API_KEY=your-key npm run sfx -- play draw
+```
+
+A plain run never overwrites an existing recording; naming a cue replaces it (the old take is
+copied to `.sfx-backup/` first, which is git-ignored). Each run produces a different take, so
+re-run a cue until it sounds right, then commit the files. Prompts and durations live in `scripts/generate-sfx.mjs`. The key is only used by this
+script, never shipped to the browser, and generations spend ElevenLabs credits.
 
 ## How to play (short version)
 

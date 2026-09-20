@@ -364,6 +364,11 @@ button {
   font-size: 1.2rem;
 }
 
+/* Sits just left of the sound toggle. */
+.sound-toggle--chatter {
+  right: 4.1rem;
+}
+
 /* ---------- Round banner ---------- */
 
 .hole-banner {
@@ -651,6 +656,20 @@ button {
   background: rgba(0, 0, 0, 0.28);
 }
 
+/* Left-edge accent for who can play here. Declared before --active/--highlighted/--open-double
+   so their border-color shorthand wins while those states are showing. */
+.train-row--open {
+  border-left-color: #6fe08a;
+}
+
+.train-row--yours {
+  border-left-color: var(--gold);
+}
+
+.train-row--locked {
+  border-left-color: rgba(255, 255, 255, 0.25);
+}
+
 .train-row--active {
   border-color: var(--gold);
   box-shadow: 0 0 0.7rem rgba(230, 183, 63, 0.45);
@@ -686,8 +705,28 @@ button {
 }
 
 .train-row__badge {
-  font-size: 0.85rem;
-  opacity: 0.85;
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+
+.train-row__badge--open {
+  color: #6fe08a;
+  background: rgba(111, 224, 138, 0.14);
+}
+
+.train-row__badge--yours {
+  color: var(--gold);
+  background: rgba(230, 183, 63, 0.14);
+}
+
+.train-row__badge--locked {
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .train-row__track {

@@ -1,5 +1,6 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { MoveHint, PlayerAction, PublicGameState, Tile, tileId } from '@mexicantrain/engine';
+import { ChatterToggle } from './ChatterToggle';
 import { CommentaryFeed } from './CommentaryFeed';
 import { HandTray } from './HandTray';
 import { HintPanel } from './HintPanel';
@@ -9,6 +10,7 @@ import { MatchOverScreen } from './MatchOverScreen';
 import { ScoreCard } from './ScoreCard';
 import { SoundToggle } from './SoundToggle';
 import { TrainBoard } from './TrainBoard';
+import { useChatterSilenced } from '../hooks/useChatterSilenced';
 import { CommentaryEntry } from '../hooks/useOnlineRoom';
 import { canDraw, canPass, hasAnyLegalPlay, isMyTurn, playableTrainIds } from '../lib/legality';
 import { seatAvatar } from '../lib/players';
@@ -54,6 +56,15 @@ export function GameView({
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null);
+  const [chatterSilenced, toggleChatterSilenced] = useChatterSilenced();
+
+  // While silenced, drop every line as it arrives rather than merely hiding the feed — the
+  // queue is shown one line at a time, so a hidden backlog would otherwise replay stale
+  // reactions the moment chatter is turned back on.
+  useEffect(() => {
+    if (!chatterSilenced) return;
+    for (const entry of commentary) dismissCommentary(entry.id);
+  }, [chatterSilenced, commentary, dismissCommentary]);
 
   const me = publicState.players[publicState.viewerSeatIndex];
   const myTurn = isMyTurn(publicState);
@@ -99,6 +110,7 @@ export function GameView({
   return (
     <div className="app">
       <SoundToggle muted={muted} onToggle={toggleMuted} />
+      <ChatterToggle silenced={chatterSilenced} onToggle={toggleChatterSilenced} />
       {headerExtra}
       {!connected && <div className="error-banner">Disconnected — try refreshing.</div>}
       {error && <div className="error-banner">{error}</div>}
@@ -163,7 +175,7 @@ export function GameView({
 
       {me?.hand && <HandTray hand={me.hand} state={publicState} selectedTileId={selectedTileId} onSelect={handleSelectTile} />}
 
-      <CommentaryFeed entries={commentary} onDismiss={dismissCommentary} />
+      {!chatterSilenced && <CommentaryFeed entries={commentary} onDismiss={dismissCommentary} />}
 
       {showScorecard && (
         <ScoreCard players={publicState.players} currentRound={publicState.roundNumber} onClose={() => setShowScorecard(false)} />

@@ -1,6 +1,12 @@
 import { PublicGameState, Tile, Train } from '@mexicantrain/engine';
 import { Domino } from './Domino';
-import { playableTrainIds } from '../lib/legality';
+import { playableTrainIds, TrainAccess, trainAccess } from '../lib/legality';
+
+const ACCESS_BADGE: Record<TrainAccess, { icon: string; text: string; title: string }> = {
+  open: { icon: '🔓', text: 'Open to all', title: 'Open — anyone can play on this train' },
+  yours: { icon: '🔑', text: 'Only you', title: 'Private — only you can play on this train' },
+  locked: { icon: '🔒', text: 'Locked', title: "Locked — only this train's owner can play on it" },
+};
 
 interface TrainBoardProps {
   state: PublicGameState;
@@ -23,6 +29,7 @@ function chainWithLeadingHalves(train: Train, hubValue: number): Array<{ tile: T
 
 function TrainRow({
   train,
+  access,
   label,
   avatar,
   isMine,
@@ -33,6 +40,7 @@ function TrainRow({
   onClick,
 }: {
   train: Train;
+  access: TrainAccess;
   label: string;
   avatar: string;
   isMine: boolean;
@@ -45,12 +53,13 @@ function TrainRow({
   const chain = chainWithLeadingHalves(train, hubValue);
   const lastTile = chain[chain.length - 1]?.tile;
   const openDoubleHere = isOpenDoubleTarget;
+  const badge = ACCESS_BADGE[access];
 
   return (
     <div
       className={[
         'train-row',
-        train.isPublic ? 'train-row--public' : 'train-row--private',
+        `train-row--${access}`,
         isMine ? 'train-row--mine' : '',
         isActingPlayer ? 'train-row--active' : '',
         destinationHighlighted ? 'train-row--highlighted' : '',
@@ -62,11 +71,9 @@ function TrainRow({
       <div className="train-row__label">
         <span className="train-row__avatar">{avatar}</span>
         <span className="train-row__name">{label}</span>
-        {train.ownerId && (
-          <span className="train-row__badge" title={train.isPublic ? 'Public — anyone can play here' : 'Private — only the owner can play here'}>
-            {train.isPublic ? '🔓' : '🔒'}
-          </span>
-        )}
+        <span className={`train-row__badge train-row__badge--${access}`} title={badge.title}>
+          <span aria-hidden="true">{badge.icon}</span> {badge.text}
+        </span>
       </div>
       {/* A <div role="button"> rather than a real <button> — the dominoes rendered inside
           are themselves <button> elements (Domino.tsx), and a <button> can't legally nest
@@ -132,6 +139,7 @@ export function TrainBoard({ state, selectedTile, onPlayToTrain, avatarFor }: Tr
           <TrainRow
             key={trainId}
             train={train}
+            access={trainAccess(state, trainId)}
             label={label}
             avatar={avatar}
             isMine={isMine}

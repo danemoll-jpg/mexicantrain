@@ -230,4 +230,58 @@ export const PERSONALITIES: Record<BotPersonalityId, Personality> = {
       },
     },
   },
+  gus: {
+    id: 'gus',
+    displayName: 'Gus',
+    avatar: '🚄',
+    tagline: 'Retired railroad conductor. Dry as a boxcar, and every line is a train pun he swears is accidental.',
+    lines: {
+      roundStart: [
+        'Round {round}. Double {engine}s. All aboard, I suppose.',
+        "Double {engine}s on the hub. Forty years on the rails and it still gets me.",
+        'Round {round}, folks. Keep your hands inside the train.',
+        "Next stop: double {engine}s. Don't dawdle.",
+      ],
+      greatPlaySelf: [
+        'Right on schedule.',
+        "That's called running a tight line.",
+        "Thirty years I ran on time. Didn't lose the touch.",
+      ],
+      greatPlayOther: [
+        "Well, that's a whistle-stop worth making, {player}.",
+        'Off the rails in the good way, {player}.',
+        "Hmph. {player}'s got some steam in the boiler after all.",
+        'That double came in ahead of schedule.',
+      ],
+      wentOutSelf: [
+        "End of the line. Everybody off.",
+        "Last car's empty. Nothing left to couple.",
+        "That's the terminus. See you next round.",
+      ],
+      wentOutOther: [
+        "{player}'s pulled into the station. Everybody else, brake!",
+        "{player} made the terminus. The rest of you, hurry it up.",
+      ],
+      roundWonSelf: [
+        'Low pips and no delays. That was a clean run.',
+        "That's a round for the conductor.",
+      ],
+      roundWonOther: [
+        "{player} takes the round. Arrived on time, I'll give 'em that.",
+        "Round's {player}'s. Punch their ticket.",
+      ],
+      matchWinSelf: [
+        "Thirteen rounds, no derailments. I'll take the gold watch.",
+        "Retired and still winning. That's the railroad way.",
+      ],
+      matchWinOther: [
+        "{player} wins it. Best ride I've had all season.",
+        "Well earned, {player}. You kept it on the tracks.",
+      ],
+      matchDraw: [
+        "A tie. Two trains, one platform. That doesn't happen.",
+        "Dead heat after thirteen rounds. Somebody check the timetable.",
+      ],
+    },
+  },
 };

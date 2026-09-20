@@ -44,7 +44,7 @@ export function tileMatches(tile: Tile, openEnd: number): boolean {
   return tile.a === openEnd || tile.b === openEnd;
 }
 
-export type BotPersonalityId = 'ed' | 'carol';
+export type BotPersonalityId = 'ed' | 'carol' | 'gus';
 
 /** One branch of the board: either a player's own train (ownerId set) or the single shared
  * Mexican train (ownerId null). `tiles` is the ordered chain as played, starting from the

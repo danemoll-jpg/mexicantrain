@@ -37,7 +37,7 @@ export function StartScreen({ connected, onStart, onBack }: StartScreenProps) {
         </p>
 
         <label className="start-screen__label">
-          What should Ed &amp; Carol call you?
+          What should Ed, Carol &amp; Gus call you?
           <input
             type="text"
             value={name}
@@ -60,6 +60,9 @@ export function StartScreen({ connected, onStart, onBack }: StartScreenProps) {
             </button>
             <button type="button" className={totalPlayers === 3 ? 'active' : ''} onClick={() => setTotalPlayers(3)}>
               You vs. 2
+            </button>
+            <button type="button" className={totalPlayers === 4 ? 'active' : ''} onClick={() => setTotalPlayers(4)}>
+              You vs. 3
             </button>
           </div>
         </label>
