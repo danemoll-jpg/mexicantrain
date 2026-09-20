@@ -6,3 +6,6 @@ build/
 *.log
 .DS_Store
 *.tsbuildinfo
+
+# Replaced sound-effect takes saved by scripts/generate-sfx.mjs
+.sfx-backup/

@@ -1,0 +1,32 @@
+{
+  "deal": [
+    "deal.mp3"
+  ],
+  "draw": [
+    "draw.mp3"
+  ],
+  "play": [
+    "play.mp3"
+  ],
+  "doubleDown": [
+    "doubleDown.mp3"
+  ],
+  "wentOut": [
+    "wentOut.mp3"
+  ],
+  "trainOpened": [
+    "trainOpened.mp3"
+  ],
+  "roundScored": [
+    "roundScored.mp3"
+  ],
+  "matchOverWin": [
+    "matchOverWin.mp3"
+  ],
+  "matchOverLose": [
+    "matchOverLose.mp3"
+  ],
+  "matchOverDraw": [
+    "matchOverDraw.mp3"
+  ]
+}

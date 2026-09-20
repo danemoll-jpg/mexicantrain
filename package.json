@@ -11,7 +11,8 @@
     "build:engine": "npm run build -w packages/engine",
     "test": "npm run test -w packages/engine",
     "dev": "npm run build:engine && npm run dev -w packages/client",
-    "build": "npm run build:engine && npm run build -w packages/client"
+    "build": "npm run build:engine && npm run build -w packages/client",
+    "sfx": "node scripts/generate-sfx.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.3"

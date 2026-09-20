@@ -1,6 +1,14 @@
-// A tiny synthesized sound engine using the Web Audio API — no external audio files to
-// download or ship, so it works completely offline and stays self-contained. Every sound
-// here is a couple of oscillator envelopes, not a recording.
+// Sound effects, played through the Web Audio API.
+//
+// Preferred source: pre-generated recordings in public/sfx/ (made once with `npm run sfx`,
+// which asks ElevenLabs' sound-effects API — see scripts/generate-sfx.mjs — and committed, so
+// nothing is fetched from ElevenLabs at play time and no API key ever reaches the browser).
+// public/sfx/manifest.json lists what was generated; a cue can have several variants, and one
+// is picked at random each time so repeated tile clacks don't sound machine-gunned.
+//
+// Fallback: a couple of oscillator envelopes per cue (the original synthesized sounds), used
+// for any cue that has no recording — including before `npm run sfx` has ever been run, or if
+// the files fail to load — so the game always makes some noise and never depends on the network.
 import { SfxCue } from '@mexicantrain/engine';
 
 export type SoundName = Exclude<SfxCue, 'matchOver'> | 'matchOverWin' | 'matchOverLose' | 'matchOverDraw';
@@ -17,10 +25,63 @@ function getContext(): AudioContext {
   return ctx;
 }
 
+const SAMPLE_VOLUME = 0.85;
+const samples = new Map<SoundName, AudioBuffer[]>();
+let samplesRequested = false;
+
+/** Fetches + decodes whatever public/sfx/manifest.json lists. Best-effort throughout: any
+ * failure (no manifest, a 404 that the SPA fallback turns into index.html, a corrupt file)
+ * just leaves that cue on its synthesized fallback. */
+function loadSamples(): void {
+  if (samplesRequested) return;
+  samplesRequested = true;
+  void (async () => {
+    try {
+      const base = `${import.meta.env.BASE_URL}sfx/`;
+      const res = await fetch(`${base}manifest.json`);
+      if (!res.ok) return;
+      const manifest = (await res.json()) as Partial<Record<SoundName, string[]>>;
+      const c = getContext();
+      await Promise.all(
+        Object.entries(manifest).map(async ([name, files]) => {
+          const decoded = await Promise.all(
+            (files ?? []).map(async (file) => {
+              try {
+                const r = await fetch(`${base}${file}`);
+                return r.ok ? await c.decodeAudioData(await r.arrayBuffer()) : null;
+              } catch {
+                return null;
+              }
+            }),
+          );
+          const usable = decoded.filter((b): b is AudioBuffer => b !== null);
+          if (usable.length > 0) samples.set(name as SoundName, usable);
+        }),
+      );
+    } catch {
+      // No recordings available — synthesized fallback it is.
+    }
+  })();
+}
+
 /** Call from inside a real user-gesture handler (e.g. a button click) — browsers block audio otherwise. */
 export function unlockAudio(): void {
   const c = getContext();
   if (c.state === 'suspended') void c.resume();
+  loadSamples();
+}
+
+function playSample(name: SoundName): boolean {
+  const variants = samples.get(name);
+  if (!variants) return false;
+  const c = getContext();
+  const source = c.createBufferSource();
+  const gain = c.createGain();
+  source.buffer = variants[Math.floor(Math.random() * variants.length)];
+  gain.gain.value = SAMPLE_VOLUME;
+  source.connect(gain).connect(c.destination);
+  source.start();
+  return true;
 }
 
 export function isMuted(): boolean {
@@ -118,7 +179,10 @@ const PLAYERS: Record<SoundName, () => void> = {
 export function playSound(name: SoundName): void {
   if (isMuted()) return;
   try {
-    PLAYERS[name]();
+    // Kicks off the (one-time) sample load too, for a player who somehow reaches a game
+    // without having clicked a start button in this page load — harmless if already started.
+    loadSamples();
+    if (!playSample(name)) PLAYERS[name]();
   } catch {
     // Audio can fail for all sorts of environment reasons — never let it break gameplay.
   }
